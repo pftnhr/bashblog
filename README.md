@@ -1,7 +1,7 @@
 bashblog
 ========
 
-A single Bash script to create blogs. 
+A single Bash script to create blogs. This Version is modified to use temporary files instead of file descriptors for SSH environments, which are actually chroot environments that do not grant direct system access and therefore no access to the file descriptor `/dev/fd/63`.
 
 Created by [cfenollosa](https://github.com/cfenollosa/bashblog) as a very, very simple way to post entries to a blog by using a public folder on a server, without any special requirements and dependencies.
 

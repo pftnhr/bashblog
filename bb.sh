@@ -680,6 +680,8 @@ all_posts() {
     {
         echo "<h3>$template_archive_title</h3>"
         prev_month=""
+        tmpfile=$(mktemp)
+        list_html_by_timestamp > "$tmpfile"
         while IFS='' read -r i; do
             is_boilerplate_file "$i" && continue
             echo -n "." 1>&3
@@ -700,7 +702,8 @@ all_posts() {
             # Date
             date=$(LC_ALL=$date_locale date -r "$i" +"$date_format")
             echo " $date</li>"
-        done < <(list_html_by_timestamp)
+        done < "$tmpfile"
+        rm "$tmpfile"
         echo "" 1>&3
         echo "</ul>"
         echo "<div id=\"all_posts\"><a href=\"./$index_file\">$template_archive_index_page</a></div>"
@@ -760,6 +763,8 @@ rebuild_index() {
     # Create the content file
     {
         n=0
+        tmpfile=$(mktemp)
+        list_html_by_timestamp > "$tmpfile"
         while IFS='' read -r i; do
             is_boilerplate_file "$i" && continue;
             if ((n >= number_of_index_articles)); then break; fi
@@ -770,7 +775,8 @@ rebuild_index() {
             fi
             echo -n "." 1>&3
             n=$(( n + 1 ))
-        done < <(list_html_by_timestamp) # sort by file timestamp, newest first
+        done < "$tmpfile"
+        rm "$tmpfile"
 
         feed=$blog_feed
         if [[ -n $global_feedburner ]]; then feed=$global_feedburner; fi
@@ -851,12 +857,15 @@ rebuild_tags() {
     done <<< "$files"
     rm "$tmpfile"
     # Now generate the tag files with headers, footers, etc
+    tmpfile=$(mktemp)
+    ls -t ./"$prefix_tags"*.tmp.html 2>/dev/null > "$tmpfile"
     while IFS='' read -r i; do
         tagname=${i#./"$prefix_tags"}
         tagname=${tagname%.tmp.html}
         create_html_page "$i" "$prefix_tags$tagname.html" yes "$global_title &mdash; $template_tag_title \"$tagname\"" "$global_author"
         rm "$i"
-    done < <(ls -t ./"$prefix_tags"*.tmp.html 2>/dev/null)
+    done < "$tmpfile"
+    rm "$tmpfile"
     echo
 }
 
@@ -908,12 +917,15 @@ list_posts() {
 
     lines=""
     n=1
+    tmpfile=$(mktemp)
+    ls -t ./*.html > "$tmpfile"
     while IFS='' read -r i; do
         is_boilerplate_file "$i" && continue
         line="$n # $(get_post_title "$i") # $(LC_ALL=$date_locale date -r "$i" +"$date_format")"
         lines+=$line\\n
         n=$(( n + 1 ))
-    done < <(ls -t ./*.html)
+    done < "$tmpfile"
+    rm "$tmpfile"
 
     echo -e "$lines" | column -t -s "#"
 }
@@ -931,13 +943,16 @@ make_sitemap() {
         echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         echo "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">"
         echo -n "." 1>&3
+        tmpfile=$(mktemp)
+        ls -t ./*.html > "$tmpfile"
         while IFS='' read -r i; do
             echo -n "." 1>&3
             echo "<url>"
             echo "<loc>$global_url/${i#./}</loc>"
             echo "<lastmod>$(LC_ALL=C date -r "$i" +"$date_format_sitemap")</lastmod>"
             echo "</url>"
-        done < <(ls -t ./*.html)
+        done < "$tmpfile"
+        rm "$tmpfile"
 
         echo "</urlset>"
     } 3>&1 >"$sitemapfile"
@@ -965,6 +980,8 @@ make_rss() {
         echo "<atom:link href=\"$global_url/$blog_feed\" rel=\"self\" type=\"application/rss+xml\" />"
     
         n=0
+        tmpfile=$(mktemp)
+        ls -t ./*.html > "$tmpfile"
         while IFS='' read -r i; do
             is_boilerplate_file "$i" && continue
             ((n >= number_of_feed_articles)) && break # max 10 items
@@ -979,7 +996,8 @@ make_rss() {
             echo "<pubDate>$(LC_ALL=C date -r "$i" +"$date_format_full")</pubDate></item>"
     
             n=$(( n + 1 ))
-        done < <(ls -t ./*.html)
+        done < "$tmpfile"
+        rm "$tmpfile"
     
         echo '</channel></rss>'
     } 3>&1 >"$rssfile"
@@ -1145,14 +1163,14 @@ reset() {
 
 # Detects if GNU date is installed
 date_version_detect() {
-	date --version >/dev/null 2>&1
-	if (($? != 0));  then
-		# date utility is BSD. Test if gdate is installed 
-		if gdate --version >/dev/null 2>&1 ; then
+  date --version >/dev/null 2>&1
+  if (($? != 0));  then
+    # date utility is BSD. Test if gdate is installed 
+    if gdate --version >/dev/null 2>&1 ; then
             date() {
                 gdate "$@"
             }
-		else
+    else
             # BSD date
             date() {
                 if [[ $1 == -r ]]; then
