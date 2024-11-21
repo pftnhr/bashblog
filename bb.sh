@@ -82,9 +82,10 @@ global_variables() {
     # please make sure that no other html file starts with this prefix
     prefix_tags="tag_"
     # personalized header and footer (only if you know what you're doing)
-    # DO NOT name them .header.html, .footer.html or they will be overwritten
+    # DO NOT name them .header.html, .title.html, .footer.html or they will be overwritten
     # leave blank to generate them, recommended
     header_file=""
+    title_file=""
     footer_file=""
     # extra content to add just after we open the <body> tag
     # and before the actual blog content
@@ -347,7 +348,7 @@ is_boilerplate_file() {
     done
 
     case $name in
-    ( "$index_file" | "$archive_index" | "$tags_index" | "$footer_file" | "$header_file" | "$global_analytics_file" | "$prefix_tags"* )
+    ( "$index_file" | "$archive_index" | "$tags_index" | "$footer_file" | "$header_file" | "$title_file" | "$global_analytics_file" | "$prefix_tags"* )
         return 0 ;;
     ( * ) # Check for excluded
         for excl in "${html_exclude[@]}"; do
@@ -388,19 +389,18 @@ create_html_page() {
         [[ -n $body_begin_file ]] && cat "$body_begin_file"
         [[ $filename = $index_file* ]] && [[ -n $body_begin_file_index ]] && cat "$body_begin_file_index"
         # body divs
-        echo '<div id="divbodyholder">'
-        echo '<div class="headerholder"><div class="header">'
+        echo '<header>'
         # blog title
-        echo '<div id="title">'
         cat .title.html
-        echo '</div></div></div>' # title, header, headerholder
-        echo '<div id="divbody"><div class="content">'
+        echo '</header>' # title, header, headerholder
+        echo '<main>'
 
         file_url=${filename#./}
         file_url=${file_url%.rebuilt} # Get the correct URL when rebuilding
         # one blog entry
         if [[ $index == no ]]; then
             echo '<!-- entry begin -->' # marks the beginning of the whole post
+            echo '<article>'
             echo "<h3><a class=\"ablack\" href=\"$file_url\">"
             # remove possible <p>'s on the title because of markdown conversion
             title=${title//<p>/}
@@ -417,25 +417,27 @@ create_html_page() {
             else
                 echo -n "<div class=\"subtitle\">$(LC_ALL=$date_locale date +"$date_format" --date="$timestamp")"
             fi
-            [[ -n $author ]] && echo -e " &mdash; \n$author"
+            [[ -n $author ]] && echo -e " &ndash; \n$author"
             echo "</div>"
             echo '<!-- text begin -->' # This marks the text body, after the title, date...
         fi
         cat "$content" # Actual content
         if [[ $index == no ]]; then
             echo -e '\n<!-- text end -->'
+            echo '</article>'
             echo '<!-- entry end -->' # absolute end of the post
         fi
 
-        echo '</div>' # content
-
         # Add disqus commments except for index and all_posts pages
         [[ $index == no ]] && disqus_body
+        
+        echo '</main>' 
 
         # page footer
+        echo "<footer>"
         cat .footer.html
+        echo "</footer>"
         # close divs
-        echo '</div></div>' # divbody and divbodyholder 
         disqus_footer
         [[ -n $body_end_file ]] && cat "$body_end_file"
         echo '</body></html>'
@@ -610,6 +612,7 @@ all_posts() {
     done
 
     {
+        echo "<article>"
         echo "<h3>$template_archive_title</h3>"
         prev_month=""
         tmpfile=$(mktemp)
@@ -630,7 +633,7 @@ all_posts() {
             fi
             # Title
             title=$(get_post_title "$i")
-            echo -n "<li><a href=\"$i\">$title</a> &mdash;"
+            echo -n "<li><a href=\"$i\">$title</a> &ndash;"
             # Date
             date=$(LC_ALL=$date_locale date -r "$i" +"$date_format")
             echo " $date</li>"
@@ -638,10 +641,13 @@ all_posts() {
         rm "$tmpfile"
         echo "" 1>&3
         echo "</ul>"
+        echo "</article>"
+        echo "<section class=\"subnav\">"
         echo "<div id=\"all_posts\"><a href=\"./$index_file\">$template_archive_index_page</a></div>"
+        echo "</section>"
     } 3>&1 >"$contentfile"
 
-    create_html_page "$contentfile" "$archive_index.tmp" yes "$global_title &mdash; $template_archive_title" "$global_author"
+    create_html_page "$contentfile" "$archive_index.tmp" yes "$global_title &ndash; $template_archive_title" "$global_author"
     mv "$archive_index.tmp" "$archive_index"
     chmod 644 "$archive_index"
     rm "$contentfile"
@@ -656,6 +662,7 @@ all_tags() {
     done
 
     {
+        echo "<article>"
         echo "<h3>$template_tags_title</h3>"
         echo "<ul>"
         for i in $prefix_tags*.html; do
@@ -669,14 +676,17 @@ all_tags() {
                 2|3|4) word=$template_tags_posts_2_4;;
                 *) word=$template_tags_posts;;
             esac
-            echo "<li><a href=\"$i\">$tagname</a> &mdash; $nposts $word</li>"
+            echo "<li><a href=\"$i\">$tagname</a> &ndash; $nposts $word</li>"
         done
         echo "" 1>&3
         echo "</ul>"
+        echo "</article>"
+        echo "<section class=\"subnav\">"
         echo "<div id=\"all_posts\"><a href=\"./$index_file\">$template_archive_index_page</a></div>"
+        echo "</section>"
     } 3>&1 > "$contentfile"
 
-    create_html_page "$contentfile" "$tags_index.tmp" yes "$global_title &mdash; $template_tags_title" "$global_author"
+    create_html_page "$contentfile" "$tags_index.tmp" yes "$global_title &ndash; $template_tags_title" "$global_author"
     mv "$tags_index.tmp" "$tags_index"
     chmod 644 "$tags_index"
     rm "$contentfile"
@@ -712,7 +722,9 @@ rebuild_index() {
 
         feed=$blog_feed
         if [[ -n $global_feedburner ]]; then feed=$global_feedburner; fi
-        echo "<div id=\"all_posts\"><a href=\"$archive_index\">$template_archive</a> &mdash; <a href=\"$tags_index\">$template_tags_title</a> &mdash; <a href=\"$feed\">$template_subscribe</a></div>"
+        echo "<section>"
+        echo "<div id=\"all_posts\"><a href=\"$archive_index\">$template_archive</a> &ndash; <a href=\"$tags_index\">$template_tags_title</a> &ndash; <a href=\"$feed\">$template_subscribe</a></div>"
+        echo "</section>"
     } 3>&1 >"$contentfile"
 
     echo ""
@@ -794,7 +806,7 @@ rebuild_tags() {
     while IFS='' read -r i; do
         tagname=${i#./"$prefix_tags"}
         tagname=${tagname%.tmp.html}
-        create_html_page "$i" "$prefix_tags$tagname.html" yes "$global_title &mdash; $template_tag_title \"$tagname\"" "$global_author"
+        create_html_page "$i" "$prefix_tags$tagname.html" yes "$global_title &ndash; $template_tag_title \"$tagname\"" "$global_author"
         rm "$i"
     done < "$tmpfile"
     rm "$tmpfile"
@@ -851,7 +863,7 @@ list_posts() {
     n=1
     tmpfile=$(mktemp)
     ls -t ./*.html > "$tmpfile"
-    while IFS='' read -r i; do
+    while IFS='' read -r line; do
         is_boilerplate_file "$i" && continue
         line="$n # $(get_post_title "$i") # $(LC_ALL=$date_locale date -r "$i" +"$date_format")"
         lines+=$line\\n
@@ -941,10 +953,12 @@ make_rss() {
 
 # generate headers, footers, etc
 create_includes() {
-    {
-        echo "<h1 class=\"nomargin\"><a class=\"ablack\" href=\"$global_url/$index_file\">$global_title</a></h1>" 
-        echo "<div id=\"description\">$global_description</div>"
-    } > ".title.html"
+    if [[ -f $title_file ]]; then cp "$title_file" .title.html
+    else {
+        echo "<h1><a href=\"$global_url/$index_file\">$global_title</a></h1>" 
+        echo "<div class=\"description\">$global_description</div>"
+        } > ".title.html"
+    fi
 
     if [[ -f $header_file ]]; then cp "$header_file" .header.html
     else {
@@ -966,7 +980,7 @@ create_includes() {
     else {
         protected_mail=${global_email//@/&#64;}
         protected_mail=${protected_mail//./&#46;}
-        echo "<div id=\"footer\">$global_license <a href=\"$global_author_url\">$global_author</a> &mdash; <a href=\"mailto:$protected_mail\">$protected_mail</a><br>"
+        echo "<div class=\"credit\">$global_license <a href=\"$global_author_url\">$global_author</a> &ndash; <a href=\"mailto:$protected_mail\">$protected_mail</a><br>"
         echo 'Generated with <a href="https://github.com/cfenollosa/bashblog">bashblog</a>, a single bash script to easily create blogs like this one</div>'
         } >> ".footer.html"
     fi
@@ -1045,7 +1059,7 @@ rebuild_all_entries() {
         # Read timestamp from file in correct format for 'create_html_page'
         timestamp=$(LC_ALL=C date -r "$i" +"$date_format_full")
 
-        create_html_page "$contentfile" "$i.rebuilt" no "$title" "$timestamp" "$(get_post_author "$i")"
+        create_html_page "$contentfile" "$i.rebuilt" no "$(get_post_title "$i")" "$timestamp" "$(get_post_author "$i")"
         # keep the original timestamp!
         timestamp=$(LC_ALL=C date -r "$i" +"$date_format_timestamp")
         mv "$i.rebuilt" "$i"
