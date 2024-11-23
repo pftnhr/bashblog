@@ -1143,7 +1143,7 @@ reset() {
     echo "Are you sure you want to delete all blog entries? Please write \"Yes, I am!\" "
     read -r line
     if [[ $line == "Yes, I am!" ]]; then
-        rm .*.html ./*.html ./*.css ./*.rss &> /dev/null
+        rm .*.html ./*.html ./*.css ./*.rss ./*.json &> /dev/null
         echo
         echo "Deleted all posts, stylesheets and feeds."
         echo "Kept your old '.backup.tar.gz' just in case, please delete it manually if needed."
