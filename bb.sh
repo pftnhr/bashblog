@@ -977,7 +977,7 @@ make_json() {
             ((n >= number_of_feed_articles)) && break # max 10 items
             pubdate=$(LC_ALL=C date -r "$i" +"$date_format_json")
             post_title=$(get_post_title "$i")
-            post_content=$(get_html_file_content 'text' 'entry' $cut_do <"$i")
+            post_content=$(get_html_file_content 'text' 'entry' $cut_do <"$i" | tr "\"" "'") # write the HTML content into a variable ands replace double quotes with single quotes for valid json
             echo -n "." 1>&3
             echo '{'
             echo '"id": "'$global_url/${i#./}'",'
