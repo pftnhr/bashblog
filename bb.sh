@@ -1226,16 +1226,17 @@ do_main() {
     # Test for existing html files
     if ls ./*.html &> /dev/null; then
         # We're going to back up just in case
-        tar -c -z -f ".backup.tar.gz" -- *.html &&
-            chmod 600 ".backup.tar.gz"
+        mkdir -p "backups/"
+        tar -c -z -f "backups/.backup.tar.gz" -- *.html &&
+            chmod 600 "backups/.backup.tar.gz"
     elif [[ $1 == rebuild ]]; then
         echo "Can't find any html files, nothing to rebuild"
         exit
     fi
 
     # Keep first backup of this day containing yesterday's version of the blog
-    [[ ! -f .yesterday.tar.gz || $(date -r .yesterday.tar.gz +'%d') != "$(date +'%d')" ]] &&
-        cp .backup.tar.gz .yesterday.tar.gz &> /dev/null
+    [[ ! -f backups/.yesterday.tar.gz || $(date -r backups/.yesterday.tar.gz +'%d') != "$(date +'%d')" ]] &&
+        cp backups/.backup.tar.gz backups/.yesterday.tar.gz &> /dev/null
 
     [[ $1 == reset ]] &&
         reset && exit
