@@ -43,10 +43,6 @@ global_variables() {
     global_analytics=""
     global_analytics_file=""
 
-    # Leave this empty (i.e. "") if you don't want to use feedburner, 
-    # or change it to your own URL
-    global_feedburner=""
-
     # Change this to your disqus username to use disqus for comments
     global_disqus_username=""
 
@@ -65,8 +61,9 @@ global_variables() {
 
     # site map file
     blog_sitemap="sitemap.xml"
-    # feed file (rss in this case)
-    blog_feed="feed.rss"
+    # feed files (rss and json in this case)
+    feed_rss="feed.rss"
+    feed_json="feed.json"
     number_of_feed_articles="10"
     # "cut" blog entry when putting it to index page. Leave blank for full articles in front page
     # i.e. include only up to first '<hr>', or '----' in markdown
@@ -124,10 +121,12 @@ global_variables() {
     template_tags_line_header="Tags:"
     # "Back to the index page" (used on archive page, it is link to blog index)
     template_archive_index_page="Back to the index page"
-    # "Subscribe" (used on bottom of index page, it is link to RSS feed)
-    template_subscribe="Subscribe"
+    # "RSS" and "JSON" (used on bottom of index page, it is links to RSS and JSON feed)
+    template_subscribe_rss="RSS"
+    template_subscribe_json="JSON"
     # "Subscribe to this page..." (used as text for browser feed button that is embedded to html)
-    template_subscribe_browser_button="Subscribe to this page..."
+    template_subscribe_rss_browser_button="Subscribe to this page's RSS Feed.'"
+    template_subscribe_json_browser_button="Subscribe to this page's JSON Feed.'"
     
     # The locale to use for the dates displayed on screen
     date_format="%B %d, %Y"
@@ -135,6 +134,7 @@ global_variables() {
     date_inpost="bashblog_timestamp"
     # Don't change these dates
     date_format_full="%a, %d %b %Y %H:%M:%S %z"
+    date_format_json="%Y-%m-%dT%T%:z"
     date_format_timestamp="%Y%m%d%H%M.%S"
     date_allposts_header="%B %Y"
     # Data format for sitemap
@@ -720,10 +720,10 @@ rebuild_index() {
         done < "$tmpfile"
         rm "$tmpfile"
 
-        feed=$blog_feed
-        if [[ -n $global_feedburner ]]; then feed=$global_feedburner; fi
+        rss=$feed_rss
+        json=$feed_json
         echo "<section>"
-        echo "<div id=\"all_posts\"><a href=\"$archive_index\">$template_archive</a> &ndash; <a href=\"$tags_index\">$template_tags_title</a> &ndash; <a href=\"$feed\">$template_subscribe</a></div>"
+        echo "<div id=\"all_posts\"><a href=\"$archive_index\">$template_archive</a> &ndash; <a href=\"$tags_index\">$template_tags_title</a> &ndash; <a href=\"$rss\">$template_subscribe_rss</a> &ndash; <a href=\"$json\">$template_subscribe_json</a></div>"
         echo "</section>"
     } 3>&1 >"$contentfile"
 
@@ -910,8 +910,8 @@ make_sitemap() {
 make_rss() {
     echo -n "Making RSS "
 
-    rssfile=$blog_feed.$RANDOM
-    while [[ -f $rssfile ]]; do rssfile=$blog_feed.$RANDOM; done
+    rssfile=$feed_rss.$RANDOM
+    while [[ -f $rssfile ]]; do rssfile=$feed_rss.$RANDOM; done
 
     {
         pubdate=$(LC_ALL=C date +"$date_format_full")
@@ -921,7 +921,7 @@ make_rss() {
         echo "<description>$global_description</description><language>en</language>"
         echo "<lastBuildDate>$pubdate</lastBuildDate>"
         echo "<pubDate>$pubdate</pubDate>"
-        echo "<atom:link href=\"$global_url/$blog_feed\" rel=\"self\" type=\"application/rss+xml\" />"
+        echo "<atom:link href=\"$global_url/$feed_rss\" rel=\"self\" type=\"application/rss+xml\" />"
     
         n=0
         tmpfile=$(mktemp)
@@ -947,8 +947,57 @@ make_rss() {
     } 3>&1 >"$rssfile"
     echo ""
 
-    mv "$rssfile" "$blog_feed"
-    chmod 644 "$blog_feed"
+    mv "$rssfile" "$feed_rss"
+    chmod 644 "$feed_rss"
+}
+
+# Generate the json feed file
+make_json() {
+    echo -n "Making JSON Feed "
+
+    jsonfile=$feed_json.$RANDOM
+    while [[ -f $jsonfile ]]; do jsonfile=$feed_json.$RANDOM; done
+
+    {
+        # pubdate=$(LC_ALL=C date +"$date_format_json")
+        echo '{'
+        echo '"version": "https://jsonfeed.org/version/1.1",' 
+        echo '"title": "'${global_title}'",'
+        echo '"home_page_url": "'$global_url/$index_file'",'
+        echo '"feed_url": "'$global_url/$feed_json'",'
+        echo '"description": "'$global_description'",'
+        echo '"language": "de",'
+        echo '"items": ['
+    
+        n=0
+        tmpfile=$(mktemp)
+        ls -t ./*.html > "$tmpfile"
+        while IFS='' read -r i; do
+            is_boilerplate_file "$i" && continue
+            ((n >= number_of_feed_articles)) && break # max 10 items
+            pubdate=$(LC_ALL=C date -r "$i" +"$date_format_json")
+            post_title=$(get_post_title "$i")
+            post_content=$(get_html_file_content 'text' 'entry' $cut_do <"$i")
+            echo -n "." 1>&3
+            echo '{'
+            echo '"id": "'$global_url/${i#./}'",'
+            echo '"title": "'$post_title'",'
+            echo '"content_html": "'$post_content'",'
+            echo '"date_published": "'$pubdate'",'
+            echo '"url": "'$global_url/${i#./}'"'
+            echo '}'
+    
+            n=$(( n + 1 ))
+        done < "$tmpfile"
+        rm "$tmpfile"
+    
+        echo ']'
+        echo '}'
+    } 3>&1 >"$jsonfile"
+    echo ""
+
+    mv "$jsonfile" "$feed_json"
+    chmod 644 "$feed_json"
 }
 
 # generate headers, footers, etc
@@ -968,11 +1017,8 @@ create_includes() {
         echo '<meta name="viewport" content="width=device-width, initial-scale=1.0">'
         echo '<link rel="shortcut icon" href="$favicon">'
         printf '<link rel="stylesheet" href="%s" type="text/css">\n' "${css_include[@]}"
-        if [[ -z $global_feedburner ]]; then
-            echo "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"$template_subscribe_browser_button\" href=\"$blog_feed\">"
-        else 
-            echo "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"$template_subscribe_browser_button\" href=\"$global_feedburner\">"
-        fi
+        echo "<link rel=\"alternate\" type=\"application/rss+xml\" title=\"$template_subscribe_rss_browser_button\" href=\"$feed_rss\">"
+        echo "<link rel=\"alternate\" type=\"application/feed+json\" title=\"$template_subscribe_json_browser_button\" href=\"$feed_json\">"
         } > ".header.html"
     fi
 
@@ -1213,6 +1259,7 @@ do_main() {
     all_posts
     all_tags
     make_rss
+    make_json
     make_sitemap
     delete_includes
 }
