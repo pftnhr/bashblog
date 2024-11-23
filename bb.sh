@@ -401,12 +401,12 @@ create_html_page() {
         if [[ $index == no ]]; then
             echo '<!-- entry begin -->' # marks the beginning of the whole post
             echo '<article>'
-            echo "<h3><a class=\"ablack\" href=\"$file_url\">"
+            echo "<h2><a href=\"$file_url\">"
             # remove possible <p>'s on the title because of markdown conversion
             title=${title//<p>/}
             title=${title//<\/p>/}
             echo "$title"
-            echo '</a></h3>'
+            echo '</a></h2>'
             if [[ -z $timestamp ]]; then
                 echo "<!-- $date_inpost: #$(LC_ALL=$date_locale date +"$date_format_timestamp")# -->"
             else
@@ -613,7 +613,7 @@ all_posts() {
 
     {
         echo "<article>"
-        echo "<h3>$template_archive_title</h3>"
+        echo "<h2>$template_archive_title</h2>"
         prev_month=""
         tmpfile=$(mktemp)
         list_html_by_timestamp > "$tmpfile"
@@ -627,7 +627,7 @@ all_posts() {
             month=$(LC_ALL=$date_locale date -r "$i" +"$date_allposts_header")
             if [[ $month != "$prev_month" ]]; then
                 [[ -n $prev_month ]] && echo "</ul>"  # Don't close ul before first header
-                echo "<h4 class='allposts_header'>$month</h4>"
+                echo "<h3 class='allposts_header'>$month</h3>"
                 echo "<ul>"
                 prev_month=$month
             fi
@@ -663,7 +663,7 @@ all_tags() {
 
     {
         echo "<article>"
-        echo "<h3>$template_tags_title</h3>"
+        echo "<h2>$template_tags_title</h2>"
         echo "<ul>"
         for i in $prefix_tags*.html; do
             [[ -f "$i" ]] || break
@@ -749,7 +749,7 @@ posts_with_tags() {
     (($# < 1)) && return
     set -- "${@/#/$prefix_tags}"
     set -- "${@/%/.html}"
-    sed -n '/^<h3><a class="ablack" href="[^"]*">/{s/.*href="\([^"]*\)">.*/\1/;p;}' "$@" 2> /dev/null
+    sed -n '/^<h2><a href="[^"]*">/{s/.*href="\([^"]*\)">.*/\1/;p;}' "$@" 2> /dev/null
 }
 
 # Rebuilds tag_*.html files
@@ -817,7 +817,7 @@ rebuild_tags() {
 #
 # $1 the html file
 get_post_title() {
-    awk '/<h3><a class="ablack" href=".+">/, /<\/a><\/h3>/{if (!/<h3><a class="ablack" href=".+">/ && !/<\/a><\/h3>/) print}' "$1"
+    awk '/<h2><a href=".+">/, /<\/a><\/h2>/{if (!/<h2><a href=".+">/ && !/<\/a><\/h2>/) print}' "$1"
 }
 
 # Return the post author
@@ -1045,7 +1045,6 @@ create_css() {
     if [[ ! -f blog.css ]]; then 
         # blog.css directives will be loaded after main.css and thus will prevail
         echo '#title{font-size: x-large;}
-        a.ablack{color:black !important;}
         li{margin-bottom:8px;}
         ul,ol{margin-left:24px;margin-right:24px;}
         #all_posts{margin-top:24px;text-align:center;}
@@ -1053,8 +1052,8 @@ create_css() {
         .content p{margin-left:24px;margin-right:24px;}
         h1{margin-bottom:12px !important;}
         #description{font-size:large;margin-bottom:12px;}
-        h3{margin-top:42px;margin-bottom:8px;}
-        h4{margin-left:24px;margin-right:24px;}
+        h2{margin-top:42px;margin-bottom:8px;}
+        h3{margin-left:24px;margin-right:24px;}
         img{max-width:100%;}' > blog.css
     fi
 
@@ -1072,7 +1071,7 @@ create_css() {
         .content{margin-bottom:5%;}
         .nomargin{margin:0;}
         .description{margin-top:10px;border-top:solid 1px #666;padding:10px 0;}
-        h3{font-size:20pt;width:100%;font-weight:bold;margin-top:32px;margin-bottom:0;}
+        h2{font-size:20pt;width:100%;font-weight:bold;margin-top:32px;margin-bottom:0;}
         .clear{clear:both;}
         #footer{padding-top:10px;border-top:solid 1px #666;color:#333333;text-align:center;font-size:small;font-family:"Courier New","Courier",monospace;}
         a{text-decoration:none;color:#003366 !important;}
