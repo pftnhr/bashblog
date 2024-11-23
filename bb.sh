@@ -966,6 +966,9 @@ make_json() {
         echo '"home_page_url": "'$global_url/$index_file'",'
         echo '"feed_url": "'$global_url/$feed_json'",'
         echo '"description": "'$global_description'",'
+        echo '"author": {'
+        echo '"name": "'$global_author'"'
+        echo '},'
         echo '"language": "de",'
         echo '"items": ['
     
