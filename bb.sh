@@ -92,7 +92,7 @@ global_variables() {
     # extra content to ONLY on the index page AFTER `body_begin_file` contents
     # and before the actual content
     body_begin_file_index=""
-    # CSS files to include on every page, f.ex. css_include=('main.css' 'blog.css')
+    # CSS files to include on every page, f.ex. css_include=('main.css')
     # leave empty to use generated
     css_include=()
     # HTML files to exclude from index, f.ex. post_exclude=('imprint.html 'aboutme.html')
@@ -643,7 +643,7 @@ all_posts() {
         echo "</ul>"
         echo "</article>"
         echo "<section class=\"subnav\">"
-        echo "<div id=\"all_posts\"><a href=\"./$index_file\">$template_archive_index_page</a></div>"
+        echo "<div class=\"subnav\"><a href=\"./$index_file\">$template_archive_index_page</a></div>"
         echo "</section>"
     } 3>&1 >"$contentfile"
 
@@ -682,7 +682,7 @@ all_tags() {
         echo "</ul>"
         echo "</article>"
         echo "<section class=\"subnav\">"
-        echo "<div id=\"all_posts\"><a href=\"./$index_file\">$template_archive_index_page</a></div>"
+        echo "<div class=\"subnav\"><a href=\"./$index_file\">$template_archive_index_page</a></div>"
         echo "</section>"
     } 3>&1 > "$contentfile"
 
@@ -723,7 +723,7 @@ rebuild_index() {
         rss=$feed_rss
         json=$feed_json
         echo "<section>"
-        echo "<div id=\"all_posts\"><a href=\"$archive_index\">$template_archive</a> &ndash; <a href=\"$tags_index\">$template_tags_title</a> &ndash; <a href=\"$rss\">$template_subscribe_rss</a> &ndash; <a href=\"$json\">$template_subscribe_json</a></div>"
+        echo "<div class=\"subnav\"><a href=\"$archive_index\">$template_archive</a> &ndash; <a href=\"$tags_index\">$template_tags_title</a> &ndash; <a href=\"$rss\">$template_subscribe_rss</a> &ndash; <a href=\"$json\">$template_subscribe_json</a></div>"
         echo "</section>"
     } 3>&1 >"$contentfile"
 
@@ -1043,45 +1043,10 @@ delete_includes() {
 # Create the css file from scratch
 create_css() {
     # To avoid overwriting manual changes. However it is recommended that
-    # this function is modified if the user changes the blog.css file
-    (( ${#css_include[@]} > 0 )) && return || css_include=('main.css' 'blog.css')
-    if [[ ! -f blog.css ]]; then 
-        # blog.css directives will be loaded after main.css and thus will prevail
-        echo '#title{font-size: x-large;}
-        li{margin-bottom:8px;}
-        ul,ol{margin-left:24px;margin-right:24px;}
-        #all_posts{margin-top:24px;text-align:center;}
-        .subtitle{font-size:small;margin:12px 0px;}
-        .content p{margin-left:24px;margin-right:24px;}
-        h1{margin-bottom:12px !important;}
-        #description{font-size:large;margin-bottom:12px;}
-        h2{margin-top:42px;margin-bottom:8px;}
-        h3{margin-left:24px;margin-right:24px;}
-        img{max-width:100%;}' > blog.css
-    fi
-
-    # If there is a style.css from the parent page (i.e. some landing page)
-    # then use it. This directive is here for compatibility with my own
-    # home page. Feel free to edit it out, though it doesn't hurt
-    if [[ -f ../style.css ]] && [[ ! -f main.css ]]; then
-        ln -s "../style.css" "main.css" 
-    elif [[ ! -f main.css ]]; then
-        echo 'body{font-family:Georgia,"Times New Roman",Times,serif;margin:0;padding:0;background-color:#F3F3F3;}
-        #divbodyholder{padding:5px;background-color:#DDD;width:100%;max-width:874px;margin:24px auto;}
-        #divbody{border:solid 1px #ccc;background-color:#fff;padding:0px 48px 24px 48px;top:0;}
-        .headerholder{background-color:#f9f9f9;border-top:solid 1px #ccc;border-left:solid 1px #ccc;border-right:solid 1px #ccc;}
-        .header{width:100%;max-width:800px;margin:0px auto;padding-top:24px;padding-bottom:8px;}
-        .content{margin-bottom:5%;}
-        .nomargin{margin:0;}
-        .description{margin-top:10px;border-top:solid 1px #666;padding:10px 0;}
-        h2{font-size:20pt;width:100%;font-weight:bold;margin-top:32px;margin-bottom:0;}
-        .clear{clear:both;}
-        #footer{padding-top:10px;border-top:solid 1px #666;color:#333333;text-align:center;font-size:small;font-family:"Courier New","Courier",monospace;}
-        a{text-decoration:none;color:#003366 !important;}
-        a:visited{text-decoration:none;color:#336699 !important;}
-        blockquote{background-color:#f9f9f9;border-left:solid 4px #e9e9e9;margin-left:12px;padding:12px 12px 12px 24px;}
-        blockquote img{margin:12px 0px;}
-        blockquote iframe{margin:12px 0px;}' > main.css
+    # this function is modified if the user changes the main.css file
+    (( ${#css_include[@]} > 0 )) && return || css_include=('main.css')
+    if [[ ! -f main.css ]]; then
+        echo '*,*:before,*:after{box-sizing:inherit;margin:0;padding:0}::before,::after{text-decoration:inherit;vertical-align:inherit}:where(:root){box-sizing:border-box;-moz-text-size-adjust:none;-webkit-text-size-adjust:none;text-size-adjust:none;background-color:#16161d;font-family:system-ui,ui-sans-serif,sans-serif;position:relative;color:#b5b5b5;min-height:100%}body{position:relative;min-height:100vh;font-size:100%;line-height:1.5;width:100%;margin:0}body>header,body>main,body>footer{background-color:#16161d;max-width:874px;margin-inline:auto;padding-inline:1rem}main{display:block}footer .credit{padding-block:1rem;text-align:center;font-size:small}article{margin-block:2rem}article:first-of-type{margin-block-start:0}article:last-of-type{scroll-margin-block-end:0}article p:not(:last-of-type){margin-block-end:.5rem}article p:last-of-type{font-size:small}article .subtitle{font-size:small;font-style:italic;margin-block-end:.5rem}a,a:visited,a:hover{text-decoration:none;color:#e1e1e1}input,textarea,button{font-size:inherit;font-family:inherit}ul,ol{margin-left:24px;margin-right:24px}h1,h2,h3,h4,h5,h6{color:#e1e1e1}h1{font-size:1.75rem;line-height:1.15;margin-top:2.625rem}h2{font-size:1.5rem;line-height:1.175;margin-top:2.25rem}h3{font-size:1.25rem;line-height:1.2;margin-top:1.874rem}h4{font-size:1.125rem;line-height:1.225;margin-top:1.6875rem}h6{font-size:1rem;line-height:1.25;margin-top:1.5rem}img{max-width:100%}blockquote{border-left:solid 4px #e9e9e9;margin-left:12px;padding:12px 12px 12px 24px}blockquote img{margin:12px 0px}blockquote iframe{margin:12px 0px}.description{font-size:large;margin-bottom:12px}.subnav{margin-block:3rem;text-align:center;font-size:small}.clear{clear:both}' > main.css
     fi
 }
 
