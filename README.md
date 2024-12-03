@@ -66,7 +66,7 @@ Features
   *Tip: advanced users could mount a remote public folder via `ftpfs` and run this script locally*
 - Allows drafts, includes a simple but clean stylesheet, generates the RSS file automatically.
 - Support for tags/categories
-- Support for Markdown, Disqus comments, Twitter, Feedburner, Google Analytics.
+- Support for Markdown, Disqus comments, ~Twitter, Feedburner, Google Analytics~.
 - The project is still maintained as of 2016. Bugs are fixed, and new features are considered (see "Contributing")
 - Everything stored in a single ~1k lines bash script, how cool is that?! ;) 
 
@@ -104,14 +104,13 @@ Detailed features
 - Save posts as drafts and resume editing later
 - HTML page for each post, using its title as the URL
 - Configurable number of posts on the front page
-- Automatic generation of an RSS file, feedburner support
+- Automatic generation of an RSS file ~, feedburner support~
 - Additional page containing an index of all posts
 - Automatically generates pages for each tag
 - Rebuild all files while keeping the original data
 - Comments delegated to Twitter, with additional Disqus support
-- An option for cookieless Twitter sharing, to comply with the 
-[EU cookie law](https://github.com/cfenollosa/eu-cookie-law)
-- Google Analytics code support
+- ~An option for cookieless Twitter sharing, to comply with the [EU cookie law](https://github.com/cfenollosa/eu-cookie-law)~
+- ~Google Analytics code support~
 - Contains its own CSS so that everything is reasonably styled by default
 - Headers, footers, and in general everything that a well-structured html file needs
 - Support to add extra content on top of every page (e.g. banners, images, etc)
